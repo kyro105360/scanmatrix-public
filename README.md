@@ -1,9 +1,9 @@
 # **ScanMatrix**  
 
 **Group 22**  
-- Reyaan Trimizi  
-- Brevin Baskaran  
-- Nicholas Yeung  
+- Reyaan Trimizi
+- Brevin Baskaran, 300231269, bbask07@uottawa.ca
+- Nicholas Yeung, 300231222, Nyeun027@uottawa.ca
 - Kyro Nassif  
 - Jessica Guo  
 
