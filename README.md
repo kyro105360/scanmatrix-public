@@ -81,6 +81,21 @@ ScanMatrix is a cutting-edge barcode scanning system that leverages advanced ima
 - Implementing adaptive brightness and contrast adjustments to preprocess images.
 - Rigorous testing across different environments and barcode types.
 
+**egal and Social Issues**
+
+- **Protecting Privacy**
+    - Follow rules like GDPR and CCPA to keep any barcode data safe.
+    - Use encryption to make sure information stays secure during storage and sharing.
+- **Licensing and Patents**
+    - Ensure we have the right permissions to use tools like YOLOv8 and Zxing and double-check existing patents to avoid any legal issues.
+- **Making It Accessible**
+    - Design the system so it’s simple and accessible, even for non-technical users.
+    - Include features like high-contrast modes or voice support to help a wider range of users.
+- **Following the Rules**
+    - Stick to industry standards for barcodes, like ISO codes for UPCs and QR codes, to ensure compatibility.
+- **Impact on People and the Planet**
+    - Reduce errors to cut down on waste and make logistics more sustainable.
+
 ---
 ## **Wiki page**
 - **Link**: https://balsam-bobolink-b75.notion.site/ScanMatrix-Barcode-Scanning-System-18337bb1b02680779903f5ac8ba93992
