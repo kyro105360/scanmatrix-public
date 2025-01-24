@@ -23,3 +23,8 @@ ScanMatrix is a cutting-edge barcode scanning system that leverages advanced ima
 - **Email**: asim@packagex.io
 
 ---
+
+## **Wiki page**
+- **Link**: https://balsam-bobolink-b75.notion.site/ScanMatrix-Barcode-Scanning-System-18337bb1b02680779903f5ac8ba93992
+
+---
