@@ -11,7 +11,7 @@
 - **Nicholas Yeung (Software Engineer)**
     - Works on the integration of barcode decoding libraries and backend systems.
 - **Jessica Guo (Software Engineer)**
-    - Add this
+    - focusing on user interface and optimizing performance
 - **Kyro Nassif (Software Engineer)**
     - Working on training and integrating machine learning models
 
