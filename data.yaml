@@ -1,0 +1,8 @@
+# data.yaml
+# YOLOv8 data config for our synthetic barcode dataset
+
+train: /Users/reyaantrimizi/miniconda3/envs/barcode-env/synthetic_barcode_project/data/images/train
+val: /Users/reyaantrimizi/miniconda3/envs/barcode-env/synthetic_barcode_project/data/images/val
+
+names:
+  0: barcode
