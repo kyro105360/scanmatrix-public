@@ -1,0 +1,4 @@
+sudo gem install cocoapods (must be installed globally on system)
+sudo npx expo install expo-camera
+npm install react-native-vision-camera
+npx pod-install
