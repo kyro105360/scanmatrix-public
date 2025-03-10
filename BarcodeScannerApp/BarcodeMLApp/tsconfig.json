@@ -1,17 +1,22 @@
 {
-  "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "jsx": "react-native",  // Change from "react" to "react-native"
     "paths": {
       "@/*": [
         "./*"
       ]
-    }
+    },
+    "esModuleInterop": true, // Adds support for interop with CommonJS modules
+    "moduleResolution": "node", // Resolves modules the same way Node.js does
+    "skipLibCheck": true, // Skips type checking of declaration files
+    "target": "esnext",
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-  ]
+  ],
+  "extends": "expo/tsconfig.base"
 }

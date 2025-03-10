@@ -1,56 +1,105 @@
-import { Image, View, Text, Button, TouchableOpacity } from 'react-native';
-import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
-import { useState } from 'react';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import styles from '../../assets/styles/HomeScreen.styles';
+import React, { useState, useEffect } from 'react'
+import { Alert, StyleSheet, View } from 'react-native'
+import { supabase } from '@/lib/supabase' 
+import { Button, Input } from '@rneui/themed'
+import { useRouter } from 'expo-router'
 
-export default function HomeScreen() {
-  const [facing, setFacing] = useState<CameraType>('back'); // Camera facing state
-  const [permission, requestPermission] = useCameraPermissions(); // Permissions hook
+export default function Auth() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
 
-  if (!permission) {
-    // Camera permissions are still loading
-    return <View />;
+  // Check if the user is logged in when the app loads
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        router.push('/authenticated') // If the user is already logged in, navigate to the authenticated page
+      }
+    }
+    checkSession()
+  }, [])
+
+  async function signInWithEmail() {
+    setLoading(true)
+    const { error, data: { session } } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    })
+
+    if (error) {
+      Alert.alert(error.message) // Show error if sign-in fails
+    } else if (session) {
+      router.push('/authenticated') // Redirect to authenticated screen after successful sign-in
+    }
+
+    setLoading(false)
   }
 
-  if (!permission.granted) {
-    // Camera permissions are not granted yet
-    return (
-      <View style={styles.container}>
-        <Text style={styles.subtitle}>We need your permission to access the camera</Text>
-        <Button onPress={requestPermission} title="Grant Permission" />
-      </View>
-    );
-  }
+  async function signUpWithEmail() {
+    setLoading(true)
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.signUp({
+      email: email,
+      password: password,
+    })
 
-  // Toggle between front and back camera
-  const toggleCameraFacing = () => {
-    setFacing((current) => (current === 'back' ? 'front' : 'back'));
-  };
+    if (error) {
+      Alert.alert(error.message) // Show error if sign-up fails
+    }
+    if (!session) {
+      Alert.alert('Please check your inbox for email verification!') // Notify user if they need to verify email
+    }
+    setLoading(false)
+  }
 
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <View style={styles.container}>
+      <View style={[styles.verticallySpaced, styles.mt20]}>
+        <Input
+          label="Email"
+          leftIcon={{ type: 'font-awesome', name: 'envelope' }}
+          onChangeText={(text) => setEmail(text)}
+          value={email}
+          placeholder="email@address.com"
+          autoCapitalize={'none'}
         />
-      }>
-      <View style={styles.titleContainer}>
-        <Text style={styles.title}>Scan your barcode here:</Text>
       </View>
-
-      {/* Camera Preview Section */}
-      <View style={styles.cameraContainer}>
-        <CameraView style={styles.camera} facing={facing}>
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
-              <Text style={styles.text}>Flip Camera</Text>
-            </TouchableOpacity>
-          </View>
-        </CameraView>
+      <View style={styles.verticallySpaced}>
+        <Input
+          label="Password"
+          leftIcon={{ type: 'font-awesome', name: 'lock' }}
+          onChangeText={(text) => setPassword(text)}
+          value={password}
+          secureTextEntry={true}
+          placeholder="Password"
+          autoCapitalize={'none'}
+        />
       </View>
-    </ParallaxScrollView>
-  );
+      <View style={[styles.verticallySpaced, styles.mt20]}>
+        <Button title="Sign in" disabled={loading} onPress={() => signInWithEmail()} />
+      </View>
+      <View style={styles.verticallySpaced}>
+        <Button title="Sign up" disabled={loading} onPress={() => signUpWithEmail()} />
+      </View>
+    </View>
+  )
 }
+
+const styles = StyleSheet.create({
+  container: {
+    marginTop: 40,
+    padding: 12,
+  },
+  verticallySpaced: {
+    paddingTop: 4,
+    paddingBottom: 4,
+    alignSelf: 'stretch',
+  },
+  mt20: {
+    marginTop: 20,
+  },
+})
