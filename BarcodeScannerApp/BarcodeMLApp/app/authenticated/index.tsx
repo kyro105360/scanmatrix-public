@@ -37,7 +37,7 @@ export default function HomeScreen() {
     if (cameraRef.current) {
       const photo = await cameraRef.current.takePictureAsync();
       // Ensure alert message 
-      Alert.alert("Picture Taken!");
+      Alert.alert("Barcode Taken!");
     }
   };
 
@@ -48,7 +48,7 @@ export default function HomeScreen() {
       // Ensure error message is inside Text component
       Alert.alert("Error", error.message);
     } else {
-      router.push('/authenticated'); // Redirect to the authentication screen
+      router.push('/(tabs)'); 
     }
   };
 
@@ -70,7 +70,7 @@ export default function HomeScreen() {
               <Text style={styles.text}>Flip Camera</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.button} onPress={takePicture}>
-              <Text style={styles.text}>Take Picture</Text>
+              <Text style={styles.text}>Scan Barcode</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.button} onPress={handleLogout}>
               <Text style={styles.text}>Logout</Text>

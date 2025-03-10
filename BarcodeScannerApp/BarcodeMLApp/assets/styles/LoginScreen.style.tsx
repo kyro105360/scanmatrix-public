@@ -1,0 +1,80 @@
+import { StyleSheet } from 'react-native';
+
+export const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#1d232a',
+  },
+  card: {
+    width: '90%',
+    padding: 25,
+    borderRadius: 5,
+    backgroundColor: '#2c3e50',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 10,
+  },
+  logo: {
+    width: 600,  
+    height: 180,
+    resizeMode: 'contain',
+    alignSelf: 'center',
+    marginBottom: 12,
+    opacity: 0.8,  
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#ecf0f1',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#bdc3c7',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  inputContainer: {
+    marginVertical: 12,
+  },
+  inputText: {
+    fontSize: 16,
+    color: '#ecf0f1',
+  },
+  buttonContainer: {
+    marginVertical: 12,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  signInButton: {
+    paddingVertical: 14,
+    backgroundColor: '#2980b9',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
+  },
+  signUpButton: {
+    paddingVertical: 14,
+    backgroundColor: '#16a085',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
+  },
+  buttonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#ffffff',
+    textAlign: 'center',
+  },
+});

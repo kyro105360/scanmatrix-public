@@ -1,105 +1,106 @@
-import React, { useState, useEffect } from 'react'
-import { Alert, StyleSheet, View } from 'react-native'
-import { supabase } from '@/lib/supabase' 
-import { Button, Input } from '@rneui/themed'
-import { useRouter } from 'expo-router'
+import React, { useState, useEffect } from 'react';
+import { Alert, View, Text, Image } from 'react-native';
+import { supabase } from '@/lib/supabase';
+import { Button, Input, Card } from '@rneui/themed';
+import { useRouter } from 'expo-router';
+import { styles } from '../../assets/styles/LoginScreen.style';
 
 export default function Auth() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const router = useRouter();
 
-  // Check if the user is logged in when the app loads
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        router.push('/authenticated') // If the user is already logged in, navigate to the authenticated page
+        router.push('/authenticated');
       }
-    }
-    checkSession()
-  }, [])
+    };
+    checkSession();
+  }, []);
 
   async function signInWithEmail() {
-    setLoading(true)
+    setLoading(true);
     const { error, data: { session } } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
-    })
+      email,
+      password,
+    });
 
     if (error) {
-      Alert.alert(error.message) // Show error if sign-in fails
+      Alert.alert('Sign-In Error', error.message);
     } else if (session) {
-      router.push('/authenticated') // Redirect to authenticated screen after successful sign-in
+      router.push('/authenticated');
     }
 
-    setLoading(false)
+    setLoading(false);
   }
 
   async function signUpWithEmail() {
-    setLoading(true)
-    const {
-      data: { session },
-      error,
-    } = await supabase.auth.signUp({
-      email: email,
-      password: password,
-    })
+    setLoading(true);
+    const { error, data: { session } } = await supabase.auth.signUp({
+      email,
+      password,
+    });
 
     if (error) {
-      Alert.alert(error.message) // Show error if sign-up fails
+      Alert.alert('Sign-Up Error', error.message);
+    } else if (!session) {
+      Alert.alert('Email Verification', 'Please check your inbox for verification!');
     }
-    if (!session) {
-      Alert.alert('Please check your inbox for email verification!') // Notify user if they need to verify email
-    }
-    setLoading(false)
+
+    setLoading(false);
   }
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.verticallySpaced, styles.mt20]}>
-        <Input
-          label="Email"
-          leftIcon={{ type: 'font-awesome', name: 'envelope' }}
-          onChangeText={(text) => setEmail(text)}
-          value={email}
-          placeholder="email@address.com"
-          autoCapitalize={'none'}
+    <View style={styles.background}>
+      <Card containerStyle={styles.card}>
+        {/* Logo */}
+        <Image
+          source={require('../../assets/images/logo.jpg')}
+          style={styles.logo}
         />
-      </View>
-      <View style={styles.verticallySpaced}>
-        <Input
-          label="Password"
-          leftIcon={{ type: 'font-awesome', name: 'lock' }}
-          onChangeText={(text) => setPassword(text)}
-          value={password}
-          secureTextEntry={true}
-          placeholder="Password"
-          autoCapitalize={'none'}
+        <View style={styles.inputContainer}>
+          <Input
+            label="Email"
+            leftIcon={{ type: 'font-awesome', name: 'envelope', color: '#555' }}
+            onChangeText={(text: string) => setEmail(text)}
+            value={email}
+            placeholder="email@address.com"
+            autoCapitalize="none"
+            inputStyle={styles.inputText}
+          />
+        </View>
+        <View style={styles.inputContainer}>
+          <Input
+            label="Password"
+            leftIcon={{ type: 'font-awesome', name: 'lock', color: '#555' }}
+            onChangeText={(text: string) => setPassword(text)}
+            value={password}
+            secureTextEntry
+            placeholder="Password"
+            autoCapitalize="none"
+            inputStyle={styles.inputText}
+          />
+        </View>
+        <Button
+          title="Sign In"
+          disabled={loading}
+          onPress={signInWithEmail}
+          buttonStyle={styles.signInButton}
+          titleStyle={styles.buttonText}
+          containerStyle={styles.buttonContainer}
         />
-      </View>
-      <View style={[styles.verticallySpaced, styles.mt20]}>
-        <Button title="Sign in" disabled={loading} onPress={() => signInWithEmail()} />
-      </View>
-      <View style={styles.verticallySpaced}>
-        <Button title="Sign up" disabled={loading} onPress={() => signUpWithEmail()} />
-      </View>
+        <Button
+          title="Sign Up"
+          disabled={loading}
+          onPress={signUpWithEmail}
+          buttonStyle={styles.signUpButton}
+          titleStyle={styles.buttonText}
+          containerStyle={styles.buttonContainer}
+        />
+      </Card>
     </View>
-  )
+  );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginTop: 40,
-    padding: 12,
-  },
-  verticallySpaced: {
-    paddingTop: 4,
-    paddingBottom: 4,
-    alignSelf: 'stretch',
-  },
-  mt20: {
-    marginTop: 20,
-  },
-})
