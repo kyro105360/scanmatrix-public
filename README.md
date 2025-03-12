@@ -8,7 +8,7 @@
     - Responsible for leading the project, integrating machine learning models, and optimizing performance.
 - **Brevin Baskaran (Computer Vision Specialist)**
     - Focus on developing and implementing computer vision techniques.
-- **Nicholas Yeung (Software Engineer)**
+- **Nicholas Yeung (Machine Learning Engineer 2)**
     - Works on the integration of barcode decoding libraries and backend systems.
 - **Jessica Guo (Software Engineer)**
     - focusing on user interface and optimizing performance
