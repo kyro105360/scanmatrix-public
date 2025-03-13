@@ -51,7 +51,7 @@ export default function Auth() {
         router.push('/authenticated');
       }
     } catch (err) {
-      Alert.alert('Something went wrong', err.message);
+      //Alert.alert('Something went wrong', err.message);
     } finally {
       setLoading(false); // Hide the loading spinner 
     }
@@ -76,7 +76,7 @@ export default function Auth() {
         Alert.alert('Almost there!', 'Check your inbox for a verification email.');
       }
     } catch (err) {
-      Alert.alert('Something went wrong', err.message);
+      //Alert.alert('Something went wrong', err.message);
     } finally {
       setLoading(false); // Turn off the spinner when done
     }
@@ -88,7 +88,7 @@ export default function Auth() {
       <Card containerStyle={styles.card}>
         {/* Logo at the top, just for branding */}
         <Image
-          source={require('../../assets/images/logo.jpg')}
+          //source={require('../../assets/images/logo.jpg')}
           style={styles.logo}
         />
 
