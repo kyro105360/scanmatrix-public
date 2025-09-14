@@ -1,144 +1,143 @@
 // various libraries and components
-import React, { useState, useEffect } from 'react';
-import { Alert, View, Text, Image } from 'react-native';
-import { supabase } from '@/lib/supabase';
-import { Button, Input, Card } from '@rneui/themed';
-import { useRouter } from 'expo-router';
-import { styles } from '../../assets/styles/LoginScreen.style';
+import React, { useState, useEffect } from "react";
+import {
+  Alert,
+  View,
+  Text,
+  TextInput,
+  Image,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "expo-router";
+import { styles } from "../../assets/styles/LoginScreen.style";
 
 // The main authentication component
 export default function Auth() {
-  // Setting up some state for email, password, and a loading indicator
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
-  
-  // We'll use this to navigate between screens
   const router = useRouter();
 
-  // Check if the user is already signed in as soon as the component loads
+  // Check if the user is already signed in
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        // If there's an active session, just go straight to the authenticated page
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (session) {
-          router.push('/authenticated');
+          router.push("/authenticated");
         }
       } catch (error) {
-        console.error('Error checking session:', error);
+        console.error("Error checking session:", error);
       }
     };
     checkSession();
   }, []);
 
-  // Function to handle signing in with email and password
+  // Function to handle signing in
   async function signInWithEmail() {
-    setLoading(true); // Show the loading spinner while we try to log in
-
+    setLoading(true);
     try {
-      const { error, data: { session } } = await supabase.auth.signInWithPassword({
+      const {
+        error,
+        data: { session },
+      } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-
-      // If there's an error, let the user know
       if (error) {
-        Alert.alert('Sign-In Error', error.message);
-      } 
-      // If it worked, take them to the authenticated page
-      else if (session) {
-        router.push('/authenticated');
+        Alert.alert("Sign-In Error", error.message);
+      } else if (session) {
+        router.push("/authenticated");
       }
-    } catch (err) {
-      //Alert.alert('Something went wrong', err.message);
     } finally {
-      setLoading(false); // Hide the loading spinner 
+      setLoading(false);
     }
   }
 
-  // Function to handle signing up with email and password
+  // Function to handle signing up
   async function signUpWithEmail() {
-    setLoading(true); // Same deal, start the spinner while signing up
-
+    setLoading(true);
     try {
-      const { error, data: { session } } = await supabase.auth.signUp({
+      const {
+        error,
+        data: { session },
+      } = await supabase.auth.signUp({
         email,
         password,
       });
-
-      // If something goes wrong, let the user know
       if (error) {
-        Alert.alert('Sign-Up Error', error.message);
-      } 
-      // Sign-up was successful, but the user still needs to verify their email
-      else if (!session) {
-        Alert.alert('Almost there!', 'Check your inbox for a verification email.');
+        Alert.alert("Sign-Up Error", error.message);
+      } else if (!session) {
+        Alert.alert("Almost there!", "Check your inbox for a verification email.");
       }
-    } catch (err) {
-      //Alert.alert('Something went wrong', err.message);
     } finally {
-      setLoading(false); // Turn off the spinner when done
+      setLoading(false);
     }
   }
 
-  // The UI for the login/signup screen
   return (
     <View style={styles.background}>
-      <Card containerStyle={styles.card}>
-        {/* Logo at the top, just for branding */}
+      {/* Card replacement */}
+      <View style={styles.card}>
         <Image
-          //source={require('../../assets/images/logo.jpg')}
+          source={require("../../assets/images/logo.jpg")}
           style={styles.logo}
         />
 
-        {/* Email input field */}
+        {/* Email input */}
         <View style={styles.inputContainer}>
-          <Input
-            label="Email"
-            leftIcon={{ type: 'font-awesome', name: 'envelope', color: '#555' }}
-            onChangeText={(text: string) => setEmail(text)}
-            value={email}
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            style={styles.inputText}
             placeholder="email@address.com"
             autoCapitalize="none"
-            inputStyle={styles.inputText}
+            value={email}
+            onChangeText={setEmail}
           />
         </View>
 
-        {/* Password input field */}
+        {/* Password input */}
         <View style={styles.inputContainer}>
-          <Input
-            label="Password"
-            leftIcon={{ type: 'font-awesome', name: 'lock', color: '#555' }}
-            onChangeText={(text: string) => setPassword(text)}
-            value={password}
-            secureTextEntry
+          <Text style={styles.label}>Password</Text>
+          <TextInput
+            style={styles.inputText}
             placeholder="Password"
             autoCapitalize="none"
-            inputStyle={styles.inputText}
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
           />
         </View>
 
-        {/* Sign In button */}
-        <Button
-          title="Sign In"
-          disabled={loading} // Disable the button if we're loading
-          onPress={signInWithEmail}
-          buttonStyle={styles.signInButton}
-          titleStyle={styles.buttonText}
-          containerStyle={styles.buttonContainer}
-        />
+        {/* Buttons container with spacing */}
+        <View style={{ marginTop: 16, gap: 12 }}>
+          {/* Sign In button */}
+          <TouchableOpacity
+            style={styles.signInButton}
+            onPress={signInWithEmail}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Sign In</Text>
+            )}
+          </TouchableOpacity>
 
-        {/* Sign Up button */}
-        <Button
-          title="Sign Up"
-          disabled={loading} // Same thing here
-          onPress={signUpWithEmail}
-          buttonStyle={styles.signUpButton}
-          titleStyle={styles.buttonText}
-          containerStyle={styles.buttonContainer}
-        />
-      </Card>
+          {/* Sign Up button */}
+          <TouchableOpacity
+            style={styles.signUpButton}
+            onPress={signUpWithEmail}
+            disabled={loading}
+          >
+            <Text style={styles.buttonText}>Sign Up</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 }

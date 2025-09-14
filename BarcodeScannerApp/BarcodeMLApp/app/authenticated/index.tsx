@@ -1,29 +1,19 @@
-// Bringing in the essentials from React Native and libraries
-import { View, Text, Button, TouchableOpacity, Alert } from 'react-native';
-import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
-import { useState, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useRouter } from 'expo-router';
-import styles from '../../assets/styles/HomeScreen.styles';
-import React from 'react';
+import React, { useState, useRef } from "react";
+import { View, Text, Button, TouchableOpacity, Alert } from "react-native";
+import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "expo-router";
+import * as FileSystem from "expo-file-system";
+import styles from "../../assets/styles/HomeScreen.styles";
 
-// The main screen component
 export default function HomeScreen() {
-  // State for the camera's facing direction (front or back)
-  const [facing, setFacing] = useState<CameraType>('back');
-  // Permission state for accessing the camera
+  const [facing, setFacing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
-  // Reference to the camera view
   const cameraRef = useRef<CameraView | null>(null);
-  // For navigation between screens
   const router = useRouter();
 
-  // If camera permissions are still loading, just show an empty view
-  if (!permission) {
-    return <View />;
-  }
+  if (!permission) return <View />;
 
-  // If permissions haven't been granted yet, prompt the user to enable them
   if (!permission.granted) {
     return (
       <View style={styles.container}>
@@ -35,57 +25,96 @@ export default function HomeScreen() {
     );
   }
 
-  // Toggle between front and back camera when the button is pressed
   const toggleCameraFacing = () => {
-    setFacing((current) => (current === 'back' ? 'front' : 'back'));
+    setFacing((current) => (current === "back" ? "front" : "back"));
   };
 
-  // Take a picture when the "Scan Barcode" button is pressed
-  const takePicture = async () => {
-    if (cameraRef.current) {
-      try {
-        const photo = await cameraRef.current.takePictureAsync();
-        // Just let the user know the photo was taken (or barcode was scanned)
-        Alert.alert("Barcode Taken!");
-      } catch (error) {
-        console.error("Error taking picture:", error);
-        Alert.alert("Error", "Something went wrong while capturing the photo.");
-      }
+const takePicture = async () => {
+  if (!cameraRef.current) return;
+
+  try {
+    const photo = await cameraRef.current.takePictureAsync({ skipProcessing: true });
+    console.log("Photo URI:", photo.uri);
+
+    // Read file as base64
+    const base64 = await FileSystem.readAsStringAsync(photo.uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    console.log("Base64 length:", base64.length);
+
+    if (!base64 || base64.length === 0) {
+      Alert.alert("Error", "Captured image is empty. Try again.");
+      return;
     }
-  };
 
-  // Log out the user when the "Logout" button is pressed
+    // Convert base64 to Uint8Array
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+
+    const fileName = `photo-${Date.now()}.jpg`;
+
+    // Upload to Supabase
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("photos")
+      .upload(fileName, byteArray, {
+        contentType: "image/jpeg",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error("Upload error:", uploadError);
+      Alert.alert("Error", "Could not upload photo.");
+      return;
+    }
+
+    console.log("Upload succeeded:", uploadData);
+
+    // Get public URL
+    const { data: publicUrlData, error: publicUrlError } = supabase.storage
+      .from("photos")
+      .getPublicUrl(fileName);
+
+    if (publicUrlError) {
+      console.error("Public URL error:", publicUrlError);
+      return;
+    }
+
+    const publicUrl = publicUrlData.publicUrl;
+    console.log("Public URL:", publicUrl);
+    Alert.alert("Success!", `Photo uploaded!\nURL:\n${publicUrl}`);
+  } catch (err) {
+    console.error(err);
+    Alert.alert("Error", "Something went wrong while capturing the photo.");
+  }
+};
+
   const handleLogout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) {
-        // Show an error message if something goes wrong
-        Alert.alert("Error", error.message);
-      } else {
-        // Go back to the main screen after logging out
-        router.push('/(tabs)');
-      }
+      if (error) Alert.alert("Error", error.message);
+      else router.push("/(tabs)");
     } catch (err) {
-      console.error("Error during logout:", err);
+      console.error(err);
       Alert.alert("Error", "Could not log out. Please try again.");
     }
   };
 
   return (
     <View style={styles.container}>
-      {/* Title at the top */}
       <View style={styles.titleContainer}>
         <Text style={styles.title}>Scan your barcode here:</Text>
       </View>
 
-      {/* Camera preview area */}
-      <View style={[styles.cameraContainer, { width: '100%' }]}>
+      <View style={[styles.cameraContainer, { width: "100%" }]}>
         <CameraView
           ref={cameraRef}
-          style={[styles.camera, { width: '100%', height: 400 }]}
+          style={[styles.camera, { width: "100%", height: 400 }]}
           facing={facing}
         >
-          {/* Button container with flip, scan, and logout options */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
               <Text style={styles.text}>Flip Camera</Text>
