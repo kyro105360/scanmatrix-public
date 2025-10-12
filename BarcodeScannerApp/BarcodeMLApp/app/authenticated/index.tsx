@@ -1,132 +1,381 @@
-import React, { useState, useRef } from "react";
-import { View, Text, Button, TouchableOpacity, Alert } from "react-native";
+import React, { useState, useRef, useEffect } from "react";
+import { View, Text, TouchableOpacity, Alert, Animated, Easing } from "react-native";
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
+import { LinearGradient } from "expo-linear-gradient";
+import * as FileSystem from "expo-file-system/legacy";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
-import * as FileSystem from "expo-file-system";
-import styles from "../../assets/styles/HomeScreen.styles";
+import styles from "../../assets/styles/BarcodeView.styles";
+
+const SUPABASE_BUCKET_NAME =
+  process.env.EXPO_PUBLIC_SUPABASE_BUCKET_NAME || "photos";
+
+/* Icon Components */
+const FlipCameraIcon = ({ color = "#00e6e6" }) => (
+  <Text style={{ color, fontSize: 24 }}>🔄</Text>
+);
+const ScanIcon = ({ color = "#fff" }) => <Text style={{ color, fontSize: 26 }}></Text>;
+const MenuIcon = ({ color = "#fff" }) => (
+  <View>
+    <View style={{ width: 18, height: 2, backgroundColor: color, marginBottom: 3 }} />
+    <View style={{ width: 18, height: 2, backgroundColor: color, marginBottom: 3 }} />
+    <View style={{ width: 18, height: 2, backgroundColor: color }} />
+  </View>
+);
 
 export default function HomeScreen() {
   const [facing, setFacing] = useState<CameraType>("back");
+  const [torch, setTorch] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [showStabilizing, setShowStabilizing] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [scanSuccess, setScanSuccess] = useState(false);
+
   const cameraRef = useRef<CameraView | null>(null);
   const router = useRouter();
 
-  if (!permission) return <View />;
+  // Animated values for emoji popup
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
 
-  if (!permission.granted) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.subtitle}>
-          We need your permission to access the camera
-        </Text>
-        <Button onPress={requestPermission} title="Grant Permission" />
-      </View>
-    );
-  }
+  /* === Get Current User === */
+  useEffect(() => {
+    const getUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data.user) {
+        setUserEmail(data.user.email ?? null);
+        setUserId(data.user.id);
+      }
+    };
+    getUser();
+  }, []);
 
-  const toggleCameraFacing = () => {
-    setFacing((current) => (current === "back" ? "front" : "back"));
+  const toggleCameraFacing = () =>
+    setFacing((cur) => (cur === "back" ? "front" : "back"));
+
+  const animateSuccessPopup = () => {
+    scaleAnim.setValue(0);
+    opacityAnim.setValue(0);
+
+    Animated.parallel([
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 400,
+        easing: Easing.bounce,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setTimeout(() => {
+        Animated.timing(opacityAnim, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }).start();
+      }, 2000);
+    });
   };
 
-const takePicture = async () => {
-  if (!cameraRef.current) return;
+  const handleScanBarcode = async () => {
+    if (isCapturing || !cameraRef.current || !userId) return;
 
-  try {
-    const photo = await cameraRef.current.takePictureAsync({ skipProcessing: true });
-    console.log("Photo URI:", photo.uri);
+    try {
+      setIsCapturing(true);
+      setShowStabilizing(true);
 
-    // Read file as base64
-    const base64 = await FileSystem.readAsStringAsync(photo.uri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-    console.log("Base64 length:", base64.length);
+      // Wait for camera to stabilize (2 seconds)
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-    if (!base64 || base64.length === 0) {
-      Alert.alert("Error", "Captured image is empty. Try again.");
-      return;
+      // Hide stabilization indicator
+      setShowStabilizing(false);
+
+      // Take multiple photos for best quality selection
+      const photos = [];
+      const numberOfPhotos = 3;
+
+      for (let i = 0; i < numberOfPhotos; i++) {
+        try {
+          const photo = await cameraRef.current.takePictureAsync({
+            quality: 1.0, // Maximum quality
+            base64: false, // Don't need base64 for file size comparison
+            exif: false,
+            skipProcessing: false, // Enable processing for better quality
+          });
+
+          if (photo && photo.uri) {
+            // Get file info to check size (larger usually means better quality)
+            const fileInfo = await FileSystem.getInfoAsync(photo.uri);
+            photos.push({
+              uri: photo.uri,
+              size: fileInfo.size || 0
+            });
+          }
+
+          // Small delay between photos
+          if (i < numberOfPhotos - 1) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+        } catch (photoError) {
+          console.warn(`Failed to take photo ${i + 1}:`, photoError);
+        }
+      }
+
+      if (photos.length === 0) {
+        Alert.alert("Error", "Failed to capture barcode image");
+        return;
+      }
+
+      // Select the best photo (largest file size usually indicates better quality)
+      const bestPhoto = photos.reduce((best, current) =>
+        current.size > best.size ? current : best
+      );
+
+      console.log(`Selected best photo: ${bestPhoto.size} bytes out of ${photos.length} photos`);
+
+      // Clean up unused photos
+      for (const photo of photos) {
+        if (photo.uri !== bestPhoto.uri) {
+          try {
+            await FileSystem.deleteAsync(photo.uri, { idempotent: true });
+          } catch (deleteError) {
+            console.warn("Failed to delete temporary photo:", deleteError);
+          }
+        }
+      }
+
+      // Upload the best photo
+      await uploadImageToSupabase(bestPhoto.uri);
+
+    } catch (error) {
+      console.error("Error in barcode capture process:", error);
+      Alert.alert("Error", "Failed to capture barcode image");
+    } finally {
+      setIsCapturing(false);
+      setShowStabilizing(false);
     }
+  };
 
-    // Convert base64 to Uint8Array
-    const byteCharacters = atob(base64);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
+  const uploadImageToSupabase = async (uri: string) => {
+    try {
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const byteArray = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+      const fileName = `barcode_${Date.now()}.jpg`;
+      const filePath = `barcodes/${fileName}`;
 
-    const fileName = `photo-${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from(SUPABASE_BUCKET_NAME)
+        .upload(filePath, byteArray, { contentType: "image/jpeg" });
+      if (uploadError) throw uploadError;
 
-    // Upload to Supabase
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("photos")
-      .upload(fileName, byteArray, {
-        contentType: "image/jpeg",
-        upsert: true,
+      const { data: publicData } = supabase.storage
+        .from(SUPABASE_BUCKET_NAME)
+        .getPublicUrl(filePath);
+      const publicUrl = publicData.publicUrl;
+
+      const { error: insertError } = await supabase.from("barcodes").insert({
+        user_id: userId,
+        email: userEmail,
+        filename: fileName,
+        storage_path: filePath,
+        image_url: publicUrl,
       });
 
-    if (uploadError) {
-      console.error("Upload error:", uploadError);
-      Alert.alert("Error", "Could not upload photo.");
-      return;
+      if (insertError) throw insertError;
+
+      setScanSuccess(true);
+      animateSuccessPopup();
+
+    } catch (e: any) {
+      console.error(e);
+      Alert.alert("Upload Error", e.message);
     }
+  };
 
-    console.log("Upload succeeded:", uploadData);
+  if (!permission) return <View />;
+  if (!permission.granted)
+    return (
+      <View style={styles.container}>
+        <LinearGradient
+          colors={["#0f2027", "#203a43", "#2c5364"]}
+          style={styles.gradientBackground}
+        />
+        <View style={styles.permissionContainer}>
+          <Text style={styles.permissionText}>
+            Camera access is required to scan barcodes
+          </Text>
+          <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
+            <Text style={styles.permissionButtonText}>Enable Camera</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
 
-    // Get public URL
-    const { data: publicUrlData, error: publicUrlError } = supabase.storage
-      .from("photos")
-      .getPublicUrl(fileName);
-
-    if (publicUrlError) {
-      console.error("Public URL error:", publicUrlError);
-      return;
-    }
-
-    const publicUrl = publicUrlData.publicUrl;
-    console.log("Public URL:", publicUrl);
-    Alert.alert("Success!", `Photo uploaded!\nURL:\n${publicUrl}`);
-  } catch (err) {
-    console.error(err);
-    Alert.alert("Error", "Something went wrong while capturing the photo.");
-  }
-};
-
-  const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) Alert.alert("Error", error.message);
-      else router.push("/(tabs)");
-    } catch (err) {
-      console.error(err);
-      Alert.alert("Error", "Could not log out. Please try again.");
-    }
+  const Avatar = ({ email }: { email: string }) => {
+    if (!email) return null;
+    const letter = email.charAt(0).toUpperCase();
+    return (
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{letter}</Text>
+        </View>
+        <Text style={[styles.sidebarUserEmail, { marginLeft: 12 }]}>{email}</Text>
+      </View>
+    );
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.titleContainer}>
-        <Text style={styles.title}>Scan your barcode here:</Text>
+      <LinearGradient
+        colors={["#0f2027", "#203a43", "#2c5364"]}
+        style={styles.gradientBackground}
+      />
+
+      {/* Top Bar */}
+      <View style={styles.topBar}>
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>Ready to Scan</Text>
+          <Text style={styles.subtitle}>Position barcode within the frame</Text>
+        </View>
+        <TouchableOpacity
+          onPress={() => setShowSidebar(!showSidebar)}
+          style={styles.menuButton}
+          testID="menu-button"
+        >
+          <MenuIcon color="#fff" />
+        </TouchableOpacity>
       </View>
 
-      <View style={[styles.cameraContainer, { width: "100%" }]}>
-        <CameraView
-          ref={cameraRef}
-          style={[styles.camera, { width: "100%", height: 400 }]}
-          facing={facing}
-        >
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
-              <Text style={styles.text}>Flip Camera</Text>
+      {/* Sidebar */}
+      {showSidebar && (
+        <View style={styles.sidebarOverlay}>
+          <TouchableOpacity
+            style={styles.sidebarBackground}
+            onPress={() => setShowSidebar(false)}
+          />
+          <View style={styles.sidebar}>
+            <View style={styles.sidebarHeader}>
+              {userEmail && <Avatar email={userEmail} />}
+            </View>
+
+            <TouchableOpacity
+              style={styles.sidebarItem}
+              onPress={() => {
+                setShowSidebar(false);
+                router.push("/admin");
+              }}
+            >
+              <Text style={styles.sidebarItemText}>⚙️  Admin Portal</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={takePicture}>
-              <Text style={styles.text}>Scan Barcode</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={handleLogout}>
-              <Text style={styles.text}>Logout</Text>
+
+            <TouchableOpacity
+              style={styles.sidebarItem}
+              onPress={async () => {
+                setShowSidebar(false);
+                await supabase.auth.signOut();
+                router.push("/(login)");
+              }}
+            >
+              <Text style={[styles.sidebarItemText, { color: "#ff6b6b" }]}>↗ Logout</Text>
             </TouchableOpacity>
           </View>
-        </CameraView>
+        </View>
+      )}
+
+      {/* Camera */}
+      <View style={styles.cameraContainer}>
+        <CameraView
+          ref={cameraRef}
+          style={styles.camera}
+          facing={facing}
+          enableTorch={torch}
+        />
+
+        {/* Scanning Overlay */}
+        <View style={styles.scanningOverlay}>
+          <View style={styles.scanningFrame}>
+            <View style={[styles.corner, styles.topLeft]} />
+            <View style={[styles.corner, styles.topRight]} />
+            <View style={[styles.corner, styles.bottomLeft]} />
+            <View style={[styles.corner, styles.bottomRight]} />
+          </View>
+
+          {showStabilizing && (
+            <View style={styles.stabilizationIndicator} testID="stabilization-indicator">
+              <View style={styles.stabilizationDots}>
+                <View style={[styles.dot, styles.dot1]} />
+                <View style={[styles.dot, styles.dot2]} />
+                <View style={[styles.dot, styles.dot3]} />
+              </View>
+              <Text style={styles.stabilizationText}>Hold Still...</Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* Animated Scan Success Emoji */}
+      {scanSuccess && (
+        <Animated.View
+          testID="scan-success-popup"
+          style={{
+            position: "absolute",
+            top: "40%",
+            left: 0,
+            right: 0,
+            alignItems: "center",
+            zIndex: 100,
+            opacity: opacityAnim,
+            transform: [{ scale: scaleAnim }],
+          }}
+        >
+          <Text style={{ fontSize: 50, color: "#00e6e6" }}>📦</Text>
+          <Text style={{ color: "#00e6e6", fontWeight: "700", marginTop: 5 }}>
+            Barcode Scanned!
+          </Text>
+        </Animated.View>
+      )}
+
+      {/* Bottom Controls */}
+      <View style={styles.bottomControlBar}>
+        <TouchableOpacity style={styles.controlButton} onPress={toggleCameraFacing}>
+          <FlipCameraIcon />
+          <Text style={styles.controlButtonText}>Flip</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.scanButton,
+            isCapturing && styles.scanButtonDisabled
+          ]}
+          onPress={handleScanBarcode}
+          disabled={isCapturing}
+          testID="scan-button"
+        >
+          <View style={styles.scanButtonInner}>
+            {isCapturing ? (
+              <Text style={{ color: "#ffffff", fontSize: 16, fontWeight: '600' }}>
+                📷
+              </Text>
+            ) : (
+              <ScanIcon />
+            )}
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.controlButton} onPress={() => setTorch(prev => !prev)}>
+          <Text style={{ color: "#00e6e6", fontSize: 22 }}>
+            {torch ? "💡" : "🔦"}
+          </Text>
+          <Text style={styles.controlButtonText}>Flash</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

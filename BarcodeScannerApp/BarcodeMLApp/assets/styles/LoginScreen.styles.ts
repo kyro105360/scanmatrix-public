@@ -1,0 +1,70 @@
+import { StyleSheet } from "react-native";
+
+export const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#050508",
+  },
+  card: {
+    width: "85%",
+    paddingVertical: 40,
+    paddingHorizontal: 25,
+    borderRadius: 20,
+    backgroundColor: "rgba(20, 10, 40, 0.85)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10,
+    alignItems: "center",
+  },
+  logoImage: {
+    width: 160,
+    height: 160,
+    marginBottom: 15,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: "700",
+    color: "#ffffff",
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#ffffff",
+    marginBottom: 20,
+  },
+  input: {
+    width: "100%",
+    paddingVertical: 14,
+    paddingHorizontal: 15,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    color: "#fff",
+    marginBottom: 15,
+  },
+  signInButton: {
+    width: "100%",
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: "#5a189a",
+    marginBottom: 15,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  signUpButton: {
+    width: "100%",
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: "#3c096c",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 17,
+    fontWeight: "600",
+  },
+});
