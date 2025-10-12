@@ -26,7 +26,6 @@ jobs:
         working-directory: BarcodeScannerApp/BarcodeMLApp
         run: |
           npm ci
-          npm install -g expo-cli
 
       # Step 4: Run Jest tests in the correct subfolder
       - name: Run tests
