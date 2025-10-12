@@ -14,22 +14,22 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # Step 2: Setup Node.js
+      # Step 2: Setup Node.js with caching for subdirectory
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20.17.0'
-          cache: 'npm'  # cache node_modules
+          cache: 'npm'
+          cache-dependency-path: BarcodeScannerApp/BarcodeMLApp/package-lock.json
 
       # Step 3: Install dependencies
       - name: Install dependencies
         run: |
-          cd BarcodeScannerApp/BarcodeMLApp
           npm ci
           npx jest --clearCache
+        working-directory: BarcodeScannerApp/BarcodeMLApp
 
       # Step 4: Run Jest tests
       - name: Run tests
-        run: |
-          cd BarcodeScannerApp/BarcodeMLApp
-          npm test
+        run: npm test
+        working-directory: BarcodeScannerApp/BarcodeMLApp
