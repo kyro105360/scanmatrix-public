@@ -56,6 +56,32 @@ jest.mock('react-native/Libraries/Alert/Alert', () => ({
 }));
 
 describe("Auth Component Unit Tests", () => {
+  it("redirects if session exists", async () => {
+    (supabase.auth.getSession as jest.Mock).mockResolvedValue({
+      data: { session: { user: { id: "user-1" } } },
+      error: null,
+    });
+
+    render(<Auth />);
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith("/authenticated");
+    });
+  });
+
+  it("does not redirect if no session", async () => {
+    (supabase.auth.getSession as jest.Mock).mockResolvedValue({
+      data: { session: null },
+      error: null,
+    });
+
+    render(<Auth />);
+
+    await waitFor(() => {
+      expect(pushMock).not.toHaveBeenCalled();
+    });
+  });
+
   it("signs in successfully and navigates", async () => {
     (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValue({
       data: { session: { user: { id: "user-2" } } },
