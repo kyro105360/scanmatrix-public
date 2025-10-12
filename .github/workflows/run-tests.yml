@@ -20,18 +20,15 @@ jobs:
         with:
           node-version: '20'
 
-      # Step 3: Debug folder structure
-      - name: Debug repo structure
-        run: ls -R
 
-      # Step 4: Install dependencies in subfolder
+      # Step 3: Install dependencies in the correct subfolder
       - name: Install dependencies
-        working-directory: BarcodeScannerApp/BarcodeML
+        working-directory: BarcodeScannerApp/BarcodeMLApp
         run: |
           npm ci
           npm install -g expo-cli
 
-      # Step 5: Run Jest tests in subfolder
+      # Step 4: Run Jest tests in the correct subfolder
       - name: Run tests
-        working-directory: BarcodeScannerApp/BarcodeML
+        working-directory: BarcodeScannerApp/BarcodeMLApp
         run: npm test
