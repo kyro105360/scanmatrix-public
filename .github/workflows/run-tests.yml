@@ -1,9 +1,9 @@
 name: Run Jest Tests
 
 on:
-  push:    # Run on every push
+  push:
     branches:
-      - '**'   # all branches
+      - mobile-app
 
 jobs:
   test:
@@ -18,14 +18,16 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'   # match your local Node version
+          node-version: '20'
 
-      # Step 3: Install dependencies
+      # Step 3: Install dependencies in subfolder
       - name: Install dependencies
+        working-directory: ScanMatrix/BarcodeScannerApp/BarcodeML
         run: |
           npm ci                  # clean install
-          npm install -g expo-cli # optional if using Expo
+          npm install -g expo-cli 
 
-      # Step 4: Run Jest tests
+      # Step 4: Run Jest tests in subfolder
       - name: Run tests
+        working-directory: ScanMatrix/BarcodeScannerApp/BarcodeML
         run: npm test
