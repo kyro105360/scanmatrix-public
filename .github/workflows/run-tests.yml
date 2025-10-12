@@ -21,14 +21,15 @@ jobs:
           node-version: '20.17.0'
           cache: 'npm'  # cache node_modules
 
-      # Step 3: Install dependencies in the correct subfolder
+      # Step 3: Install dependencies
       - name: Install dependencies
-        working-directory: BarcodeScannerApp/BarcodeMLApp
         run: |
-          npm ci  # ensures exact versions from package-lock.json
-          npx jest --clearCache  # clears Jest cache 
+          cd BarcodeScannerApp/BarcodeMLApp
+          npm ci
+          npx jest --clearCache
 
-      # Step 4: Run Jest tests in the correct subfolder
+      # Step 4: Run Jest tests
       - name: Run tests
-        working-directory: BarcodeScannerApp/BarcodeMLApp
-        run: npm test
+        run: |
+          cd BarcodeScannerApp/BarcodeMLApp
+          npm test
