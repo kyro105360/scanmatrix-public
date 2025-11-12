@@ -34,20 +34,56 @@ export default function AdminPortal() {
 
       setUserEmail(user.email ?? null);
 
-      let query = supabase
-        .from("barcodes")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+      try {
+        let query = supabase
+          .from("barcodes")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
 
-      if (fromDateTime) query = query.gte("created_at", fromDateTime.toISOString());
-      if (toDateTime) query = query.lte("created_at", toDateTime.toISOString());
+        if (fromDateTime) query = query.gte("created_at", fromDateTime.toISOString());
+        if (toDateTime) query = query.lte("created_at", toDateTime.toISOString());
 
-      const { data, error } = await query;
+        const { data: barcodesData, error: barcodesError } = await query;
+        if (barcodesError) throw barcodesError;
 
-      if (error) Alert.alert("Error", error.message);
-      else setRecords(data || []);
-      setLoading(false);
+        const decodedBarcodes = barcodesData
+          ?.map((b: any) => String(b.decoded_barcode).trim())
+          .filter(Boolean);
+
+        let barcodeIdData: any[] = [];
+
+        if (decodedBarcodes && decodedBarcodes.length > 0) {
+          const { data, error } = await supabase
+            .from("barcode_id")
+            .select("*")
+            .in("decoded_barcode", decodedBarcodes);
+
+          if (error) throw error;
+          barcodeIdData = data || [];
+        }
+
+        const mergedRecords = (barcodesData || []).map((b: any) => {
+          const barcodeStr = String(b.decoded_barcode).trim();
+          const match = barcodeIdData.find(
+            (bd: any) => String(bd.decoded_barcode).trim() === barcodeStr
+          );
+
+          return {
+            ...b,
+            mailing_address: match?.mailing_address || "",
+            phone: match?.phone_number || "",
+            physical_address: match?.physical_address || "",
+            notes: match?.notes || "",
+          };
+        });
+
+        setRecords(mergedRecords);
+      } catch (e: any) {
+        Alert.alert("Error", e.message);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchUserAndRecords();
@@ -55,10 +91,36 @@ export default function AdminPortal() {
 
   const updateField = async (id: string, field: string, value: string) => {
     const { error } = await supabase.from("barcodes").update({ [field]: value }).eq("id", id);
-    if (error) console.error("Update error:", error.message);
-    else setRecords((prev) =>
+    if (error) return;
+
+    setRecords((prev) =>
       prev.map((r) => (r.id === id ? { ...r, [field]: value } : r))
     );
+
+    if (field === "decoded_barcode") {
+      const barcodeStr = String(value).trim();
+      const { data, error: barcodeDataError } = await supabase
+        .from("barcode_id")
+        .select("*")
+        .eq("decoded_barcode", barcodeStr)
+        .single();
+
+      if (barcodeDataError || !data) return;
+
+      setRecords((prev) =>
+        prev.map((r) =>
+          r.id === id
+            ? {
+                ...r,
+                mailing_address: data?.mailing_address || "",
+                phone: data?.phone_number || "",
+                physical_address: data?.physical_address || "",
+                notes: data?.notes || "",
+              }
+            : r
+        )
+      );
+    }
   };
 
   const sendEmail = async (item: any) => {
@@ -70,8 +132,8 @@ export default function AdminPortal() {
 Your package has been received and processed.
 
 Delivery Details:
-${item.physical_address ? `Address: ${item.physical_address}` : 'Address: Not specified'}
-${item.notes ? `Package Notes: ${item.notes}` : ''}
+${item.physical_address ? `Address: ${item.physical_address}` : "Address: Not specified"}
+${item.notes ? `Package Notes: ${item.notes}` : ""}
 
 Scanned on: ${new Date(item.created_at).toLocaleString()}
 
@@ -92,7 +154,11 @@ Package Management Team`;
   const sendText = async (item: any) => {
     if (!item.phone) return Alert.alert("No Phone", "Please add a phone number first");
 
-    const message = `Your package has been received! ${item.physical_address ? `Delivery to: ${item.physical_address}` : ''} ${item.notes ? `Notes: ${item.notes}` : ''} Scanned: ${new Date(item.created_at).toLocaleString()}`;
+    const message = `Your package has been received! ${
+      item.physical_address ? `Delivery to: ${item.physical_address}` : ""
+    } ${item.notes ? `Notes: ${item.notes}` : ""} Scanned: ${new Date(
+      item.created_at
+    ).toLocaleString()}`;
     try {
       await Linking.openURL(`sms:${item.phone}?body=${encodeURIComponent(message)}`);
     } catch {
@@ -150,6 +216,13 @@ Package Management Team`;
         value={item.notes || ""}
         onChangeText={(v) => updateField(item.id, "notes", v)}
       />
+      <TextInput
+        style={adminStyles.input}
+        placeholder="Barcode"
+        placeholderTextColor="rgba(255,255,255,0.5)"
+        value={item.decoded_barcode || ""}
+        onChangeText={(v) => updateField(item.id, "decoded_barcode", v)}
+      />
 
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 10 }}>
         <TouchableOpacity style={adminStyles.actionButton} onPress={() => sendEmail(item)}>
@@ -164,7 +237,6 @@ Package Management Team`;
 
   return (
     <View style={adminStyles.container}>
-      {/* Top Bar */}
       <View style={adminStyles.topBar}>
         <View style={adminStyles.titleContainer}>
           <Text style={adminStyles.title}>Scanned Barcodes</Text>
@@ -175,27 +247,25 @@ Package Management Team`;
         </TouchableOpacity>
       </View>
 
-      {/* Filters */}
-    <View style={adminStyles.filtersContainer}>
-      <TouchableOpacity onPress={() => setShowFromPicker(true)} style={adminStyles.filterButton}>
-        <Text style={adminStyles.filterButtonText}>
-          {fromDateTime ? `From: ${fromDateTime.toLocaleDateString()}` : "Select From"}
-        </Text>
-      </TouchableOpacity>
+      <View style={adminStyles.filtersContainer}>
+        <TouchableOpacity onPress={() => setShowFromPicker(true)} style={adminStyles.filterButton}>
+          <Text style={adminStyles.filterButtonText}>
+            {fromDateTime ? `From: ${fromDateTime.toLocaleDateString()}` : "Select From"}
+          </Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => setShowToPicker(true)} style={adminStyles.filterButton}>
-        <Text style={adminStyles.filterButtonText}>
-          {toDateTime ? `To: ${toDateTime.toLocaleDateString()}` : "Select To"}
-        </Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity onPress={() => setShowToPicker(true)} style={adminStyles.filterButton}>
+          <Text style={adminStyles.filterButtonText}>
+            {toDateTime ? `To: ${toDateTime.toLocaleDateString()}` : "Select To"}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
-      {/* DateTime Pickers */}
       {showFromPicker && (
         <DateTimePicker
           value={fromDateTime || new Date()}
           mode="datetime"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          display={Platform.OS === "ios" ? "spinner" : "default"}
           onChange={(event, date) => {
             setShowFromPicker(false);
             if (date) setFromDateTime(date);
@@ -206,7 +276,7 @@ Package Management Team`;
         <DateTimePicker
           value={toDateTime || new Date()}
           mode="datetime"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          display={Platform.OS === "ios" ? "spinner" : "default"}
           onChange={(event, date) => {
             setShowToPicker(false);
             if (date) setToDateTime(date);
@@ -214,19 +284,35 @@ Package Management Team`;
         />
       )}
 
-      {/* Sidebar */}
       {showSidebar && (
         <View style={adminStyles.sidebarOverlay}>
-          <TouchableOpacity testID = 'sidebar-background' style={adminStyles.sidebarBackground} onPress={() => setShowSidebar(false)} />
+          <TouchableOpacity
+            testID="sidebar-background"
+            style={adminStyles.sidebarBackground}
+            onPress={() => setShowSidebar(false)}
+          />
           <View style={adminStyles.sidebar}>
             <View style={adminStyles.sidebarHeader}>
               {userEmail && <Avatar email={userEmail} />}
               <Text style={adminStyles.sidebarUserEmail}>{userEmail}</Text>
             </View>
-            <TouchableOpacity style={adminStyles.sidebarItem} onPress={() => { setShowSidebar(false); router.push("/authenticated"); }}>
+            <TouchableOpacity
+              style={adminStyles.sidebarItem}
+              onPress={() => {
+                setShowSidebar(false);
+                router.push("/authenticated");
+              }}
+            >
               <Text style={adminStyles.sidebarItemText}> ⛶ Barcode Scan</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={adminStyles.sidebarItem} onPress={async () => { setShowSidebar(false); await supabase.auth.signOut(); router.push("/(login)"); }}>
+            <TouchableOpacity
+              style={adminStyles.sidebarItem}
+              onPress={async () => {
+                setShowSidebar(false);
+                await supabase.auth.signOut();
+                router.push("/(login)");
+              }}
+            >
               <Text style={[adminStyles.sidebarItemText, { color: "#ff6b6b" }]}>↗ Logout</Text>
             </TouchableOpacity>
           </View>
@@ -235,7 +321,7 @@ Package Management Team`;
 
       <FlatList
         data={records}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}
         ListEmptyComponent={!loading ? <Text style={adminStyles.empty}>No records found.</Text> : null}

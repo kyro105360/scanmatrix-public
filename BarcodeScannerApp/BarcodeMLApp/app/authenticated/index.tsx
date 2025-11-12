@@ -128,7 +128,7 @@ export default function HomeScreen() {
       }
 
       if (photos.length === 0) {
-        Alert.alert("Error", "Failed to capture barcode image");
+        Alert.alert("Error", "Failed to capture any photos");
         return;
       }
 
@@ -162,43 +162,56 @@ export default function HomeScreen() {
     }
   };
 
-  const uploadImageToSupabase = async (uri: string) => {
-    try {
-      const base64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-      const byteArray = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-      const fileName = `barcode_${Date.now()}.jpg`;
-      const filePath = `barcodes/${fileName}`;
+    const uploadImageToSupabase = async (uri: string) => {
+      try {
+        const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+        const byteArray = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+        const fileName = `barcode_${Date.now()}.jpg`;
+        const filePath = `barcodes/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from(SUPABASE_BUCKET_NAME)
-        .upload(filePath, byteArray, { contentType: "image/jpeg" });
-      if (uploadError) throw uploadError;
+        const { error: uploadError } = await supabase.storage
+          .from(SUPABASE_BUCKET_NAME)
+          .upload(filePath, byteArray, { contentType: "image/jpeg" });
+        if (uploadError) throw uploadError;
 
-      const { data: publicData } = supabase.storage
-        .from(SUPABASE_BUCKET_NAME)
-        .getPublicUrl(filePath);
-      const publicUrl = publicData.publicUrl;
+        const { data: publicData } = supabase.storage.from(SUPABASE_BUCKET_NAME).getPublicUrl(filePath);
+        const publicUrl = publicData.publicUrl;
 
-      const { error: insertError } = await supabase.from("barcodes").insert({
-        user_id: userId,
-        email: userEmail,
-        filename: fileName,
-        storage_path: filePath,
-        image_url: publicUrl,
-      });
+        const { error: insertError } = await supabase.from("barcodes").insert({
+          user_id: userId,
+          email: userEmail,
+          filename: fileName,
+          storage_path: filePath,
+          image_url: publicUrl,
+        });
+        if (insertError) throw insertError;
 
-      if (insertError) throw insertError;
+        // Call Edge Function to send barcode images
+        const edgeResponse = await fetch("https://rouyhbmwrldpeyxlibvj.supabase.co/functions/v1/send_to_colab", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ file_path: filePath }),
+        });
 
-      setScanSuccess(true);
-      animateSuccessPopup();
+        const edgeResult = await edgeResponse.json();
+        if (!edgeResponse.ok) {
+          console.error("Edge Function error:", edgeResult);
+          Alert.alert("Processing Error", edgeResult.error || "Failed to decode barcode");
+          return;
+        }
 
-    } catch (e: any) {
-      console.error(e);
-      Alert.alert("Upload Error", e.message);
-    }
-  };
+        const barcode = edgeResult.barcode;
+        console.log("Decoded barcode:", barcode);
+        Alert.alert("Success", `Barcode decoded: ${barcode}`);
+
+        setScanSuccess(true);
+        animateSuccessPopup();
+
+      } catch (e: any) {
+        console.error(e);
+        Alert.alert("Upload/Processing Error", e.message);
+      }
+    };
 
   if (!permission) return <View />;
   if (!permission.granted)
@@ -245,11 +258,7 @@ export default function HomeScreen() {
           <Text style={styles.title}>Ready to Scan</Text>
           <Text style={styles.subtitle}>Position barcode within the frame</Text>
         </View>
-        <TouchableOpacity
-          onPress={() => setShowSidebar(!showSidebar)}
-          style={styles.menuButton}
-          testID="menu-button"
-        >
+        <TouchableOpacity onPress={() => setShowSidebar(true)} style={styles.menuButton}>
           <MenuIcon color="#fff" />
         </TouchableOpacity>
       </View>
@@ -309,7 +318,7 @@ export default function HomeScreen() {
           </View>
 
           {showStabilizing && (
-            <View style={styles.stabilizationIndicator} testID="stabilization-indicator">
+            <View style={styles.stabilizationIndicator}>
               <View style={styles.stabilizationDots}>
                 <View style={[styles.dot, styles.dot1]} />
                 <View style={[styles.dot, styles.dot2]} />
@@ -324,7 +333,6 @@ export default function HomeScreen() {
       {/* Animated Scan Success Emoji */}
       {scanSuccess && (
         <Animated.View
-          testID="scan-success-popup"
           style={{
             position: "absolute",
             top: "40%",
@@ -357,7 +365,6 @@ export default function HomeScreen() {
           ]}
           onPress={handleScanBarcode}
           disabled={isCapturing}
-          testID="scan-button"
         >
           <View style={styles.scanButtonInner}>
             {isCapturing ? (
