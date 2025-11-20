@@ -272,6 +272,25 @@ sidebar: {
     marginLeft: 16,
     letterSpacing: 0.3,
   },
+  zoomControls: {
+    position: "absolute",
+    bottom: 120,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  zoomButton: {
+    backgroundColor: "#00e6e6",
+    borderRadius: 25,
+    padding: 10,
+    marginHorizontal: 10,
+  },
+  zoomButtonText: { fontSize: 20, color: "#000" },
+  zoomLevelText: { fontSize: 16, color: "#fff" },
+
 });
+
 
 export default styles;

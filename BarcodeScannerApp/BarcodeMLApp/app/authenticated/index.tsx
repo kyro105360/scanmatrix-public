@@ -33,6 +33,7 @@ export default function HomeScreen() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [scanSuccess, setScanSuccess] = useState(false);
+  const [zoom, setZoom] = useState(0); // Zoom state (0-1)
 
   const cameraRef = useRef<CameraView | null>(null);
   const router = useRouter();
@@ -90,35 +91,26 @@ export default function HomeScreen() {
       setIsCapturing(true);
       setShowStabilizing(true);
 
-      // Wait for camera to stabilize (2 seconds)
       await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Hide stabilization indicator
       setShowStabilizing(false);
 
-      // Take multiple photos for best quality selection
       const photos = [];
       const numberOfPhotos = 3;
 
       for (let i = 0; i < numberOfPhotos; i++) {
         try {
           const photo = await cameraRef.current.takePictureAsync({
-            quality: 1.0, // Maximum quality
-            base64: false, // Don't need base64 for file size comparison
+            quality: 1.0,
+            base64: false,
             exif: false,
-            skipProcessing: false, // Enable processing for better quality
+            skipProcessing: false,
           });
 
           if (photo && photo.uri) {
-            // Get file info to check size (larger usually means better quality)
             const fileInfo = await FileSystem.getInfoAsync(photo.uri);
-            photos.push({
-              uri: photo.uri,
-              size: fileInfo.size || 0
-            });
+            photos.push({ uri: photo.uri, size: fileInfo.size || 0 });
           }
 
-          // Small delay between photos
           if (i < numberOfPhotos - 1) {
             await new Promise(resolve => setTimeout(resolve, 300));
           }
@@ -132,14 +124,12 @@ export default function HomeScreen() {
         return;
       }
 
-      // Select the best photo (largest file size usually indicates better quality)
       const bestPhoto = photos.reduce((best, current) =>
         current.size > best.size ? current : best
       );
 
       console.log(`Selected best photo: ${bestPhoto.size} bytes out of ${photos.length} photos`);
 
-      // Clean up unused photos
       for (const photo of photos) {
         if (photo.uri !== bestPhoto.uri) {
           try {
@@ -150,7 +140,6 @@ export default function HomeScreen() {
         }
       }
 
-      // Upload the best photo
       await uploadImageToSupabase(bestPhoto.uri);
 
     } catch (error) {
@@ -162,56 +151,55 @@ export default function HomeScreen() {
     }
   };
 
-    const uploadImageToSupabase = async (uri: string) => {
-      try {
-        const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
-        const byteArray = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-        const fileName = `barcode_${Date.now()}.jpg`;
-        const filePath = `barcodes/${fileName}`;
+  const uploadImageToSupabase = async (uri: string) => {
+    try {
+      const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+      const byteArray = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+      const fileName = `barcode_${Date.now()}.jpg`;
+      const filePath = `barcodes/${fileName}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from(SUPABASE_BUCKET_NAME)
-          .upload(filePath, byteArray, { contentType: "image/jpeg" });
-        if (uploadError) throw uploadError;
+      const { error: uploadError } = await supabase.storage
+        .from(SUPABASE_BUCKET_NAME)
+        .upload(filePath, byteArray, { contentType: "image/jpeg" });
+      if (uploadError) throw uploadError;
 
-        const { data: publicData } = supabase.storage.from(SUPABASE_BUCKET_NAME).getPublicUrl(filePath);
-        const publicUrl = publicData.publicUrl;
+      const { data: publicData } = supabase.storage.from(SUPABASE_BUCKET_NAME).getPublicUrl(filePath);
+      const publicUrl = publicData.publicUrl;
 
-        const { error: insertError } = await supabase.from("barcodes").insert({
-          user_id: userId,
-          email: userEmail,
-          filename: fileName,
-          storage_path: filePath,
-          image_url: publicUrl,
-        });
-        if (insertError) throw insertError;
+      const { error: insertError } = await supabase.from("barcodes").insert({
+        user_id: userId,
+        email: userEmail,
+        filename: fileName,
+        storage_path: filePath,
+        image_url: publicUrl,
+      });
+      if (insertError) throw insertError;
 
-        // Call Edge Function to send barcode images
-        const edgeResponse = await fetch("https://rouyhbmwrldpeyxlibvj.supabase.co/functions/v1/send_to_colab", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ file_path: filePath }),
-        });
+      const edgeResponse = await fetch("https://rouyhbmwrldpeyxlibvj.supabase.co/functions/v1/send_to_colab", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ file_path: filePath }),
+      });
 
-        const edgeResult = await edgeResponse.json();
-        if (!edgeResponse.ok) {
-          console.error("Edge Function error:", edgeResult);
-          Alert.alert("Processing Error", edgeResult.error || "Failed to decode barcode");
-          return;
-        }
-
-        const barcode = edgeResult.barcode;
-        console.log("Decoded barcode:", barcode);
-        Alert.alert("Success", `Barcode decoded: ${barcode}`);
-
-        setScanSuccess(true);
-        animateSuccessPopup();
-
-      } catch (e: any) {
-        console.error(e);
-        Alert.alert("Upload/Processing Error", e.message);
+      const edgeResult = await edgeResponse.json();
+      if (!edgeResponse.ok) {
+        console.error("Edge Function error:", edgeResult);
+        //Alert.alert("Processing Error", edgeResult.error || "Failed to decode barcode");
+        return;
       }
-    };
+
+      const barcode = edgeResult.barcode;
+      console.log("Decoded barcode:", barcode);
+      Alert.alert("Success", `Barcode decoded: ${barcode}`);
+
+      setScanSuccess(true);
+      animateSuccessPopup();
+
+    } catch (e: any) {
+      console.error(e);
+      Alert.alert("Upload/Processing Error", e.message);
+    }
+  };
 
   if (!permission) return <View />;
   if (!permission.granted)
@@ -306,6 +294,7 @@ export default function HomeScreen() {
           style={styles.camera}
           facing={facing}
           enableTorch={torch}
+          zoom={zoom}  // <-- Added zoom here
         />
 
         {/* Scanning Overlay */}
@@ -328,6 +317,25 @@ export default function HomeScreen() {
             </View>
           )}
         </View>
+      </View>
+
+      {/* Zoom Controls */}
+      <View style={styles.zoomControls}>
+        <TouchableOpacity
+          onPress={() => setZoom(prev => Math.max(0, prev - 0.1))}
+          style={styles.zoomButton}
+        >
+          <Text style={styles.zoomButtonText}>➖</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.zoomLevelText}>{Math.round(zoom * 100)}%</Text>
+
+        <TouchableOpacity
+          onPress={() => setZoom(prev => Math.min(1, prev + 0.1))}
+          style={styles.zoomButton}
+        >
+          <Text style={styles.zoomButtonText}>➕</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Animated Scan Success Emoji */}
