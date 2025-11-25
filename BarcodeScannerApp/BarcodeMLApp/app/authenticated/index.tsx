@@ -195,6 +195,14 @@ export default function HomeScreen() {
       setScanSuccess(true);
       animateSuccessPopup();
 
+      // Update the row with new barcode
+      const { error: updateError } = await supabase
+        .from("barcodes")
+        .update({ decoded_barcode: barcode })
+        .eq("filename", fileName);   // Matching the correct row
+
+      if (updateError) throw updateError;
+
     } catch (e: any) {
       console.error(e);
       Alert.alert("Upload/Processing Error", e.message);
