@@ -1,5 +1,7 @@
 # **ScanMatrix**  
 
+IMPORTANT NOTE: MAIN BRANCH FOR THE MOBILE APPLICATION IS mobile-app
+
 ## **Group 22**
 
 ### **Team Members and Their Roles**
