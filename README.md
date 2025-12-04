@@ -100,5 +100,5 @@ ScanMatrix is a cutting-edge barcode scanning system that leverages advanced ima
 
 ---
 ## **Wiki page**
-- **Link**: https://balsam-bobolink-b75.notion.site/ScanMatrix-Barcode-Scanning-System-18337bb1b02680779903f5ac8ba93992
+- **Link**: [https://balsam-bobolink-b75.notion.site/ScanMatrix-Barcode-Scanning-System-18337bb1b02680779903f5ac8ba93992](https://www.notion.so/Summary-Page-1c737bb1b026803c8cfdd977f713987c)
 
