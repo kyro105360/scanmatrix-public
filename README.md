@@ -83,7 +83,7 @@ ScanMatrix is a cutting-edge barcode scanning system that leverages advanced ima
 - Implementing adaptive brightness and contrast adjustments to preprocess images.
 - Rigorous testing across different environments and barcode types.
 
-**egal and Social Issues**
+**Legal and Social Issues**
 
 - **Protecting Privacy**
     - Follow rules like GDPR and CCPA to keep any barcode data safe.
