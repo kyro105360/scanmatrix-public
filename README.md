@@ -64,6 +64,7 @@ ScanMatrix is a cutting-edge barcode scanning system that leverages advanced ima
 - **Output**: Decoded barcode information displayed in the UI or sent to integrated systems.
 - **Infrastructure**:
     - Backend built on Python with Flask or FastAPI.
+    - Supabase used for authentication, database management, and edge functions. 
     - Frontend with React.js for a responsive web interface.
     - Dockerized deployment for cross-platform compatibility.
 
@@ -82,6 +83,16 @@ ScanMatrix is a cutting-edge barcode scanning system that leverages advanced ima
 - Leveraging pre-trained models and fine-tuning them for specific conditions.
 - Implementing adaptive brightness and contrast adjustments to preprocess images.
 - Rigorous testing across different environments and barcode types.
+
+  ### **Anticipated ML Risks**
+
+- High GPU resource requirements for training and running ML models.
+- Large datasets are challenging to store, transfer, and manage.
+- Poor image quality, blurry barcodes, or unusual angles may reduce detection accuracy.
+- Deployment costs for GPU-backed backend can be high.
+- Integration complexity between frontend, backend, and Supabase services (authentication, database, edge functions).
+- Limited user accessibility due to GPU requirements for running the backend locally.
+
 
 **Legal and Social Issues**
 
