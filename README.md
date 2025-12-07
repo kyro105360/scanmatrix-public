@@ -84,7 +84,7 @@ ScanMatrix is a cutting-edge barcode scanning system that leverages advanced ima
 - Implementing adaptive brightness and contrast adjustments to preprocess images.
 - Rigorous testing across different environments and barcode types.
 
-  ### **Anticipated ML Risks**
+### **Anticipated ML Risks**
 
 - High GPU resource requirements for training and running ML models.
 - Large datasets are challenging to store, transfer, and manage.
@@ -102,7 +102,7 @@ ScanMatrix is a cutting-edge barcode scanning system that leverages advanced ima
 - **Licensing and Patents**
     - Ensure we have the right permissions to use tools like YOLOv8 and Zxing and double-check existing patents to avoid any legal issues.
 - **Making It Accessible**
-    - Design the system so it’s simple and accessible, even for non-technical users.
+    - Design the system so it's simple and accessible, even for non-technical users.
     - Include features like high-contrast modes or voice support to help a wider range of users.
 - **Following the Rules**
     - Stick to industry standards for barcodes, like ISO codes for UPCs and QR codes, to ensure compatibility.
@@ -113,3 +113,37 @@ ScanMatrix is a cutting-edge barcode scanning system that leverages advanced ima
 ## **Wiki page**
 - **Link**: [https://balsam-bobolink-b75.notion.site/ScanMatrix-Barcode-Scanning-System-18337bb1b02680779903f5ac8ba93992](https://www.notion.so/Summary-Page-1c737bb1b026803c8cfdd977f713987c)
 
+
+
+## **6. Sample Results**
+
+The `results/` folder contains a few sample outputs from the pipeline showing:
+- Successful barcode detections with green bounding boxes
+- Decoded barcode data overlaid on images
+- Examples at various distances and lighting conditions
+
+### Example Output
+![Sample Result](results/sample_output.png)
+
+*Green boxes indicate successfully decoded barcodes. Yellow Boxes indicate detected but not decoded.*
+
+---
+
+## **7. Files**
+
+| File | Description |
+|------|-------------|
+| `ScanMatrix.ipynb` | Main notebook with detection and decoding pipeline |
+| `README.md` | Project documentation |
+| `results/` | Sample output images from pipeline runs |
+
+---
+
+## **8. Quick Start**
+
+1. Open `ScanMatrix.ipynb` in Google Colab
+2. Update `MODEL_PATH` and `IMAGE_PATH` in the Configuration cell
+3. Run all cells
+4. View annotated output image with detection results
+
+---

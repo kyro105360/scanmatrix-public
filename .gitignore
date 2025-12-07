@@ -1,6 +1,4 @@
 __pycache__/
 *.log
-*.pt
 runs/
 .env
-weights/
