@@ -1,1 +1,1 @@
-"""Dataset generation helpers for ScanMatrix."""
+"""Utilities for ScanMatrix inference and dataset generation."""
