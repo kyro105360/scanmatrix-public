@@ -141,6 +141,31 @@ The `results/` folder contains a few sample outputs from the pipeline showing:
 
 ## **8. Quick Start**
 
+### **Portable CLI Inference**
+
+You can now run the decode pipeline from the repository root without editing machine-specific paths:
+
+```bash
+python scripts/decode_pipeline.py
+```
+
+By default the script uses:
+
+- `weights/saved_model.pt`
+- `data/images/test`
+- `data/images/test_crops`
+- `results/decode_report.json`
+
+You can override any of those locations with CLI flags:
+
+```bash
+python scripts/decode_pipeline.py --input-dir data/images/test --report-path results/decode_report.json
+```
+
+If `ultralytics`, `opencv-python`, or `pyzbar` are not installed, the CLI exits with a clear dependency error instead of failing on an import at module load time.
+
+### **Notebook Workflow**
+
 1. Open `ScanMatrix.ipynb` in Google Colab
 2. Update `MODEL_PATH` and `IMAGE_PATH` in the Configuration cell
 3. Run all cells
