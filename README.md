@@ -141,6 +141,27 @@ The `results/` folder contains a few sample outputs from the pipeline showing:
 
 ## **8. Quick Start**
 
+### **Reproducible Dataset Generation**
+
+Generate the synthetic YOLO dataset from the repository root:
+
+```bash
+python scripts/generate_dataset.py --seed 42
+```
+
+The generator now:
+
+- uses repository-relative paths instead of machine-specific absolute paths
+- records the random seed and barcode payload for every generated sample
+- writes `data/dataset_manifest.json` for traceability
+- supports `--dry-run` to inspect the planned dataset split without generating image files
+
+Example dry run:
+
+```bash
+python scripts/generate_dataset.py --train-count 5 --val-count 2 --seed 7 --dry-run
+```
+
 ### **Portable CLI Inference**
 
 You can now run the decode pipeline from the repository root without editing machine-specific paths:
@@ -163,7 +184,6 @@ python scripts/decode_pipeline.py --input-dir data/images/test --report-path res
 ```
 
 If `ultralytics`, `opencv-python`, or `pyzbar` are not installed, the CLI exits with a clear dependency error instead of failing on an import at module load time.
-
 ### **Notebook Workflow**
 
 1. Open `ScanMatrix.ipynb` in Google Colab

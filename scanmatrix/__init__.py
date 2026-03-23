@@ -1,1 +1,1 @@
-"""Portable barcode detection and decode helpers for ScanMatrix."""
+"""Utilities for ScanMatrix inference and dataset generation."""
