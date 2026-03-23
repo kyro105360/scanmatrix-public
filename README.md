@@ -141,6 +141,29 @@ The `results/` folder contains a few sample outputs from the pipeline showing:
 
 ## **8. Quick Start**
 
+### **Reproducible Dataset Generation**
+
+Generate the synthetic YOLO dataset from the repository root:
+
+```bash
+python scripts/generate_dataset.py --seed 42
+```
+
+The generator now:
+
+- uses repository-relative paths instead of machine-specific absolute paths
+- records the random seed and barcode payload for every generated sample
+- writes `data/dataset_manifest.json` for traceability
+- supports `--dry-run` to inspect the planned dataset split without generating image files
+
+Example dry run:
+
+```bash
+python scripts/generate_dataset.py --train-count 5 --val-count 2 --seed 7 --dry-run
+```
+
+### **Notebook Workflow**
+
 1. Open `ScanMatrix.ipynb` in Google Colab
 2. Update `MODEL_PATH` and `IMAGE_PATH` in the Configuration cell
 3. Run all cells
