@@ -1,33 +1,10 @@
 # **ScanMatrix**  
 
 IMPORTANT NOTE: MAIN BRANCH FOR THE MOBILE APPLICATION IS mobile-app
-
-## **Group 22**
-
-### **Team Members and Their Roles**
-
-- **Reyaan Trimizi (Scrum Master, Machine Learning Engineer)**
-    - Responsible for leading the project, integrating machine learning models, and optimizing performance.
-- **Brevin Baskaran (Computer Vision Specialist)**
-    - Focus on developing and implementing computer vision techniques.
-- **Nicholas Yeung (Machine Learning Engineer 2)**
-    - Works on the integration of barcode decoding libraries and backend systems.
-- **Jessica Guo (Software Engineer)**
-    - focusing on user interface and optimizing performance
-- **Kyro Nassif (Software Engineer)**
-    - Working on training and integrating machine learning models
-
 ---
 
 ## **1. Project Overview**  
 ScanMatrix is a cutting-edge barcode scanning system that leverages advanced image processing and machine learning algorithms to efficiently and accurately scan and decode various types of barcodes. This project focuses on building an intelligent barcode scanning solution to improve logistics and warehouse operations. The system will leverage advanced computer vision techniques to detect and decode barcodes in real-time under various conditions, such as inconsistent lighting and angled surfaces. By streamlining inventory management processes and reducing errors in barcode recognition, the project addresses critical challenges in modern logistics workflows. The system will utilize state-of-the-art models such as YOLOv8 for object detection and decoding libraries like Zxing, ensuring robust performance and seamless integration with existing systems.
-
----
-
-## **2. Customer Details**
-- **Name**: Asim Darweish 
-- **Affiliation**: PackageX
-- **Email**: asim@packagex.io
 
 ---
 ### **3. Objectives**
@@ -108,10 +85,6 @@ ScanMatrix is a cutting-edge barcode scanning system that leverages advanced ima
     - Stick to industry standards for barcodes, like ISO codes for UPCs and QR codes, to ensure compatibility.
 - **Impact on People and the Planet**
     - Reduce errors to cut down on waste and make logistics more sustainable.
-
----
-## **Wiki page**
-- **Link**: [https://balsam-bobolink-b75.notion.site/ScanMatrix-Barcode-Scanning-System-18337bb1b02680779903f5ac8ba93992](https://www.notion.so/Summary-Page-1c737bb1b026803c8cfdd977f713987c)
 
 
 
